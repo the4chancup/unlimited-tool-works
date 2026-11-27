@@ -20478,3 +20478,24 @@ slot's tier, since the badge and the quick actions ask for one player. The logic
 version 1 until 1.0.0, so a file saved under the earlier logic reads as modified and fails
 load step 1; no such file has been made outside the tests.
 Plan: `plans/aatf_rules.md` "The interpreter" edited.
+
+## 2026-11-27 — tests and mutation runs — a test past 180 seconds fails in every run
+Decision: one per-test limit, 180 seconds, everywhere tests run. nextest stops a test past
+it (`.config/nextest.toml`'s `slow-timeout`, 60 s three times), which every nextest run reads,
+the mutation runs and the coverage map included. The gates' `scripts/gates/run_tests.py` runs
+whole libtest binaries, and stops one whose test libtest reported at 60 seconds and that has
+not ended by 180. A mutant whose test is stopped this way is filed as caught: nextest ends the
+run with its failed-tests code, which both mutation runners read as a catch. The run-level
+timeout (`max(150 s, 5 × baseline)`, `.cargo/mutants.toml`) stays as a backstop.
+Why: the run-level timeout scales with the crate's whole suite, while each mutant on the VPS
+runs only its selected tests: timeouts took 2.0 h of the 10.0 h of test time in the filed
+rolling runs, and `save_editor`'s extra pass waited 3438 s per hang. A limit in the mutation
+runs alone, not the gates, would count a mutant caught whose slowdown the gates let pass. Not
+the baseline scaled logarithmically (the alternative weighed): it stays keyed to the whole
+suite, and grows slower than a starved run's time does, so it would stop long legitimate runs.
+A test stopped by the limit is not filed as a timeout to review, because telling it apart
+needs the caught mutants' logs, which the VPS does not send back. Such a false catch needs a
+test starved past 180 s, nine times the slowest test's 20 s in a loaded gate run; the VPS, with
+no other load, does not starve, and the risk is watched once this PC's lane takes shards
+(worklog `timeouts`).
+Plan: `CONTRIBUTING.md` "A test fails, it never hangs" edited.

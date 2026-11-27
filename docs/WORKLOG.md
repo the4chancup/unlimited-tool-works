@@ -1017,6 +1017,15 @@ and no phase closes with one outstanding.
             tables and the locks they made needed go; each run's timings a file of its own;
           - [ ] **d5** [after d4] the logon task, each shard's tree copies in its own folder
             (deleted at start for shards not running), and `deep`'s open fixes triaged;
+          - [~] **timeouts** 2026-11-27 (DECISIONS 2026-11-27 "a test past 180 seconds fails
+            in every run"): a hang cost a mutant up to `max(150 s, 5 × the crate's
+            whole-suite baseline)`, 2.0 h of the 10.0 h of test time in `mutants.rolling/`'s
+            filed runs, though on the VPS each mutant runs only its selected tests. Now
+            every run fails a test past 180 s: nextest by `.config/nextest.toml`, the
+            gates' `run_tests.py` from libtest's 60-second notice. Owed: one SWE-2 round
+            (scripts and docs). To watch once this PC's lane runs shards (d3): a local
+            mutant log whose only failure is nextest's `TIMEOUT` (no `FAIL`) may be a
+            starved test filed as caught;
         - [ ] **deep** [after shards/lock, shards/rename, orphans, oom, died, memcap] 2026-11-25 (the maintainer): the mutation
           machinery is reviewed at Tier 1's depth (RUNBOOK "Review rounds" (e)). Carbon's loop
           over `scripts/mutation/` whole, in parts, then Astra's, each paid round between SWE-2

@@ -19,6 +19,9 @@ package, outside `docs/` (and the root's `*.md`), other than the mutation runs' 
 files and other than a script under `scripts/` no test run goes through runs them all. Those
 alone run none.
 The doc-tests run whenever any binary does.
+
+A test still running at the per-test limit stops its binary, which then fails
+(`limit_seconds`; CONTRIBUTING.md "A test fails, it never hangs").
 """
 
 import json
@@ -26,6 +29,7 @@ import os
 import re
 import subprocess
 import sys
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
@@ -36,6 +40,11 @@ import temp_alias
 ROOT =Path(__file__).resolve().parents[2]
 # libtest's summary line: "test result: ok. 12 passed; 0 failed; ..."
 SUMMARY = re.compile(r"test result: \w+\. (\d+) passed;")
+# Stable libtest cannot stop a test, but tells once that one has run 60 seconds, then names it
+# again when it ends ("test a::b ... ok", or FAILED).
+NOTICE = re.compile(r"test (\S+) has been running for over 60 seconds")
+NOTICE_SECONDS = 60
+ENDED = re.compile(r"test (\S+) \.\.\. ")
 JOBS = min(4, os.cpu_count() or 1)
 # Files outside every package that no test reads: the mutation runs' exclusions, which change
 # with most review rounds (`scripts/mutation/mutants_test.py`, run in both modes, checks them).
@@ -163,16 +172,66 @@ def runner() -> list[str]:
     return [str(ROOT / command[0]), *command[1:]]
 
 
+def limit_seconds() -> int:
+    """The per-test limit nextest keeps (`.config/nextest.toml`'s `slow-timeout`: its period
+    times `terminate-after`), so the gates and the mutation runs fail a test at the same time."""
+    import tomllib
+
+    config = tomllib.loads((ROOT / ".config" / "nextest.toml").read_text(encoding="utf-8"))
+    timeout = config["profile"]["default"]["slow-timeout"]
+    period = timeout["period"]
+    if not (period.endswith("s") and period[:-1].isdigit()):
+        raise ValueError(f".config/nextest.toml: a slow-timeout period in seconds, not {period!r}")
+    return int(period[:-1]) * timeout["terminate-after"]
+
+
 def run(binary: Binary, pkgs: dict[str, Package], wrapper: list[str],
-        temp_env: dict[str, str]) -> tuple[int, float, str]:
+        temp_env: dict[str, str], limit: int) -> tuple[int, float, str]:
     """One binary whole, as `cargo test` runs it: from its package's folder, with the package
-    variables cargo sets, in `temp_env` (`temp_alias.py` says what its temp folder is)."""
+    variables cargo sets, in `temp_env` (`temp_alias.py` says what its temp folder is).
+
+    A test that libtest reports past 60 seconds and that has not ended `limit` seconds in
+    stops the binary (on Windows the wrapper, whose job takes the binary with it). The binary
+    then fails, its output ending with the test's name."""
     pkg = pkgs[binary.package]
     env = dict(temp_env, CARGO_MANIFEST_DIR=str(pkg.dir), CARGO_PKG_NAME=pkg.name)
     start = time.monotonic()
-    proc = subprocess.run([*wrapper, binary.exe], cwd=pkg.dir, env=env, capture_output=True,
-                          text=True, encoding="utf-8", errors="replace")
-    return proc.returncode, time.monotonic() - start, proc.stdout + proc.stderr
+    proc = subprocess.Popen([*wrapper, binary.exe], cwd=pkg.dir, env=env,
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                            encoding="utf-8", errors="replace")
+    lines: list[str] = []
+    noticed: dict[str, float] = {}
+    lock = threading.Lock()
+
+    def read() -> None:
+        for line in proc.stdout:
+            lines.append(line)
+            with lock:
+                if found := NOTICE.match(line):
+                    noticed[found[1]] = time.monotonic()
+                elif found := ENDED.match(line):
+                    noticed.pop(found[1], None)
+
+    reader = threading.Thread(target=read, daemon=True)
+    reader.start()
+    over: list[str] = []
+    while reader.is_alive() and not over:
+        reader.join(timeout=1)
+        with lock:
+            now = time.monotonic()
+            over = sorted(name for name, at in noticed.items()
+                          if now - at >= limit - NOTICE_SECONDS)
+    if not over:
+        return proc.wait(), time.monotonic() - start, "".join(lines)
+    proc.kill()
+    proc.wait()
+    # Not waited for to the end: a process a test started can still hold the pipe.
+    reader.join(timeout=5)
+    with lock:
+        output = "".join(lines)
+    return 1, time.monotonic() - start, (
+        f"{output}run_tests: stopped: {', '.join(over)} ran past {limit} s "
+        f"(CONTRIBUTING.md \"A test fails, it never hangs\")\n")
 
 
 def main(argv: list[str]) -> int:
@@ -202,10 +261,11 @@ def main(argv: list[str]) -> int:
 
     wrapper = runner()
     temp_env = temp_alias.env()
+    limit = limit_seconds()
     start = time.monotonic()
     failed = passed = 0
     with ThreadPoolExecutor(max_workers=JOBS) as pool:
-        futures = {pool.submit(run, b, pkgs, wrapper, temp_env): b for b in selected}
+        futures = {pool.submit(run, b, pkgs, wrapper, temp_env, limit): b for b in selected}
         for future in as_completed(futures):
             binary = futures[future]
             code, secs, output = future.result()

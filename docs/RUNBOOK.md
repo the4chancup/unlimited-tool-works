@@ -260,7 +260,11 @@ out, so a timeout that no infinite loop explains is rerun before it counts as ca
 its log (`mutants.diff/<crate>/log/`) already shows tests reported `FAILED`: the mutant is
 then caught, and the run only outlasted its limit because several failing tests each waited
 out a bounded wait (the update dialog's tests wait up to 10 s for a frame, and a mutant of
-`updater::install` fails a dozen of them under a 20 s limit). A build
+`updater::install` fails a dozen of them under a 20 s limit). A single test past 180 s is
+not a timeout but a catch: nextest stops it (CONTRIBUTING.md "A test fails, it never hangs"),
+so the timeouts left are runs in which each test ends in time but the whole run does not. A
+test starved that long would be filed as caught unseen; the worklog's `timeouts` item watches
+for it once this PC's lane runs shards. A build
 killed for memory (the remote half's cap) is filed by cargo-mutants as unviable, which hides
 an untested mutant: eframe's dependency tree once outgrew a 6 GiB cap and 12 remote mutants
 went untested that way, so the scripts list every killed build and fail the run. A failed

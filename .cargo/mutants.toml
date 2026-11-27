@@ -24,6 +24,10 @@ test_tool = "nextest"
 # only; CI never runs mutants.
 additional_cargo_test_args = ["--test-threads=7"]
 
+# A hang is first a single test's: nextest stops any test past 180 s (`.config/nextest.toml`),
+# and the mutant is then caught, as the gates would fail the same change. The run-level timeout
+# below is the backstop, for a run in which each test ends in time but the whole run does not.
+#
 # A mutant's tests time out at five times the baseline's test time, cargo-mutants' default,
 # which leaves a starved low-priority local run (RUNBOOK "Mutation runs") room before a slow
 # test counts as a hang. The baseline is one crate's suite: `just mutants` takes one crate and

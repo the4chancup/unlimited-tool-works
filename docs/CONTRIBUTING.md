@@ -450,7 +450,18 @@ Requirements:
   run's timeout: one such helper once hung ten mutants for 17 minutes each. A bound on a wait
   for another thread or process (a worker's reply, a child process starting) only stops a hang,
   never measures speed, so it is the same 120 seconds everywhere: a tighter one, 5 or 10
-  seconds, is a test that fails under a loaded full-suite run.
+  seconds, is a test that fails under a loaded full-suite run. Past 180 seconds a test fails
+  in every run, whatever it is doing, so a loop in the code under test that never ends fails
+  it too:
+  - every nextest run stops the test (`.config/nextest.toml`), the mutation runs and the
+    coverage map included;
+  - the gates' runner, `scripts/gates/run_tests.py`, runs each binary whole under libtest,
+    which cannot stop a single test, so it stops the binary when a test libtest reported
+    still running at 60 seconds has not ended by 180.
+
+  The limit is above the 120-second waits, so a wait that gives up still fails with its own
+  message, and far above the slowest test under load. A mutation run therefore files a mutant
+  whose test ran past it as caught, as the gates would fail the same change.
 - **A test never races a worker thread or an earlier frame.** A view that hands work to a
   worker thread (a Live AATF check, a comparison) is tested with the reply delivered when
   the test says so, never by drawing frames and counting on the worker to have replied, or

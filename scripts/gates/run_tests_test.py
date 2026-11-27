@@ -1,13 +1,17 @@
 """Tests of scripts/gates/run_tests.py's selection; `just test` runs them before the tests."""
 
 import json
+import os
+import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
 
 import temp_alias
-from run_tests import ROOT, SUMMARY, binaries, dependents, owner, packages, select, times_file
+from run_tests import (ROOT, SUMMARY, Binary, binaries, dependents, limit_seconds, owner,
+                       packages, run, select, times_file)
 
 
 def meta(*crates: tuple[str, str, list[str]]) -> dict:
@@ -138,6 +142,58 @@ class Binaries(unittest.TestCase):
         found = binaries(lines, PKGS)
         self.assertEqual([(b.key, b.exe) for b in found],
                          [("save_editor/save_editor", "a.exe"), ("save_editor/cli", "b.exe")])
+
+
+class Limit(unittest.TestCase):
+    """A stand-in for a test binary: a script printing libtest's lines, run by the Python
+    running these tests, with a limit one second past libtest's 60-second notice."""
+
+    def binary(self, folder: str, body: str) -> Binary:
+        script = Path(folder) / "fake_binary.py"
+        script.write_text("import sys, time\n" + body, encoding="utf-8")
+        return Binary("save_editor", "fake", str(script))
+
+    def test_the_limit_is_nextests(self) -> None:
+        self.assertEqual(limit_seconds(), 180)
+
+    def test_a_test_past_the_limit_stops_its_binary_and_fails_it(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            binary = self.binary(tmp, (
+                "print('test a::quick ... ok', flush=True)\n"
+                "print('test a::hangs has been running for over 60 seconds', flush=True)\n"
+                "time.sleep(60)\n"))
+            start = time.monotonic()
+            code, _, output = run(binary, PKGS, [sys.executable], dict(os.environ), 61)
+        self.assertLess(time.monotonic() - start, 30)
+        self.assertNotEqual(code, 0)
+        self.assertIn("test a::quick ... ok", output)
+        self.assertTrue(output.endswith(
+            'run_tests: stopped: a::hangs ran past 61 s '
+            '(CONTRIBUTING.md "A test fails, it never hangs")\n'), output)
+
+    def test_a_test_that_ends_after_the_notice_is_not_stopped(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            binary = self.binary(tmp, (
+                "print('test a::slow has been running for over 60 seconds', flush=True)\n"
+                "print('test a::slow ... ok', flush=True)\n"
+                "time.sleep(3)\n"
+                "print('test result: ok. 1 passed;', flush=True)\n"
+                "sys.exit(0)\n"))
+            code, _, output = run(binary, PKGS, [sys.executable], dict(os.environ), 61)
+        self.assertEqual(code, 0)
+        self.assertNotIn("stopped", output)
+        self.assertTrue(output.endswith("test result: ok. 1 passed;\n"), output)
+
+    def test_a_binarys_own_exit_code_and_both_streams_come_through(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            binary = self.binary(tmp, (
+                "print('test a::b ... FAILED', flush=True)\n"
+                "print('panicked', file=sys.stderr, flush=True)\n"
+                "sys.exit(101)\n"))
+            code, _, output = run(binary, PKGS, [sys.executable], dict(os.environ), 61)
+        self.assertEqual(code, 101)
+        self.assertIn("test a::b ... FAILED", output)
+        self.assertIn("panicked", output)
 
 
 class TempFolder(unittest.TestCase):
