@@ -36,7 +36,10 @@ under a second) the same way: a broken pointer otherwise surfaces only at the ne
 checkpoint, which then fails on a docs commit long since made. A commit that changes a `.rs`,
 `.toml` or `.py` file runs the comment gate (`scripts/gates/comment_refs.py`, a few seconds)
 likewise: a test fixture's `# Worklog` line, read as a comment, once failed `just gates` on
-main from a merge until a slice's review found it. A commit (not a merge) that changes
+main from a merge until a slice's review found it. A commit that changes a `.rs` file runs
+rustfmt in check mode on the changed ones (`formatted`) and commits nothing when it would
+change one: an import out of order once passed the tests and clippy, and failed only the
+checkpoint's format gate after the commit. A commit (not a merge) that changes
 `docs/WORKLOG.md` runs `scripts/pages/roadmap.py` (under a second, before the doc-pointer gate,
 which then checks the page's links too), which refuses a worklog item breaking the
 convention its header states (otherwise found only by the next checkpoint's test), and
@@ -63,6 +66,10 @@ from commit_message import problems
 # sent beside it; one written in the call before, and read, was measured at about 3 s, so
 # a 5 s bar refused ordinary commits too.
 FRESH_SECONDS = 2
+
+# The workspace's `edition` (`Cargo.toml`, `[workspace.package]`), which rustfmt run on a
+# file alone cannot read: without it, rustfmt parses as Rust 2015.
+EDITION = "2024"
 
 # The roadmap page, by a path from the repository's root whatever the directory run from.
 ROADMAP_PAGE = ":/docs/maintainer/roadmap.html"
@@ -144,6 +151,10 @@ def main(argv: list[str]) -> int:
     if sources and not passes("scripts/gates/comment_refs.py"):
         print("commit: nothing committed; a comment points at the project's history (above)")
         return 1
+    if not formatted([path for path in changed if path.endswith(".rs")]):
+        print("commit: nothing committed; rustfmt would change a Rust file (above): run "
+              "`just cargo fmt`, then commit")
+        return 1
     code = subprocess.run(["git", "commit", "-F", str(message), *rest]).returncode
     if code == 0:
         report_left_out(rest)
@@ -224,13 +235,30 @@ def warn_personal(text: str, where: str) -> None:
 
 def passes(script: str) -> bool:
     """Runs a check script of the tree being committed; whether it passed."""
-    root = subprocess.run(
-        ["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True, check=True
-    ).stdout.strip()
+    root = toplevel()
     # The tree being committed, which `--in` may make another worktree than this file's.
     # `roadmap.py` opens its input by a path relative to the root.
     command = [sys.executable, str(Path(root) / script)]
     return subprocess.run(command, cwd=root).returncode == 0
+
+
+def formatted(paths: list[str]) -> bool:
+    """Whether rustfmt leaves the Rust files `paths` (from the root, deleted ones skipped) as
+    they are, under the repository's `rustfmt.toml`. Run from the root, so rustup takes the
+    toolchain `rust-toolchain.toml` pins."""
+    root = toplevel()
+    present = [path for path in paths if (Path(root) / path).is_file()]
+    if not present:
+        return True
+    command = ["rustfmt", "--check", "--edition", EDITION, "--", *present]
+    return subprocess.run(command, cwd=root).returncode == 0
+
+
+def toplevel() -> str:
+    """The root of the tree being committed."""
+    return subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True, check=True
+    ).stdout.strip()
 
 
 if __name__ == "__main__":

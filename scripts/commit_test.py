@@ -138,6 +138,36 @@ class CommitAll(unittest.TestCase):
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
         self.assertIn("commit: warning: the message may say something personal", run.stdout)
 
+    def commit_rust(self, text: str) -> subprocess.CompletedProcess[str]:
+        """Commits a new `lib.rs` holding `text`, with the repository's toolchain pin, so
+        rustup finds the toolchain on a machine with no default, and a stub comment gate."""
+        shutil.copy(SCRIPT.parent.parent / "rust-toolchain.toml", self.repo)
+        (self.repo / "scripts" / "gates").mkdir(parents=True)
+        (self.repo / "scripts" / "gates" / "comment_refs.py").write_text("", encoding="utf-8")
+        (self.repo / "lib.rs").write_text(text, encoding="utf-8")
+        git(self.repo, "add", "-A")
+        return self.commit_all()
+
+    def test_a_rust_file_rustfmt_would_change_stops_the_commit(self) -> None:
+        head = git(self.repo, "rev-parse", "HEAD")
+        run = self.commit_rust("fn main(){}\n")
+        self.assertEqual(run.returncode, 1, run.stdout + run.stderr)
+        self.assertIn("rustfmt would change a Rust file", run.stdout)
+        self.assertEqual(git(self.repo, "rev-parse", "HEAD"), head)
+
+    def test_a_formatted_rust_file_is_committed(self) -> None:
+        # `async` is a keyword from the 2018 edition on: parsed as Rust 2015, this fails.
+        run = self.commit_rust("pub async fn run() {}\n")
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        self.assertIn("lib.rs", git(self.repo, "show", "--name-only", "--format=", "HEAD"))
+
+    def test_a_deleted_rust_file_is_not_checked(self) -> None:
+        self.assertEqual(self.commit_rust("pub fn run() {}\n").returncode, 0)
+        (self.repo / "lib.rs").unlink()
+        run = self.commit_all()
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        self.assertEqual(git(self.repo, "status", "--porcelain"), "")
+
     def test_a_commit_saying_nothing_personal_warns_nothing(self) -> None:
         run = self.commit_all()
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
