@@ -27,7 +27,8 @@ while it runs, so a maintainer who meets it in a report finds it on that line.
 One line per piece of work in flight; the items below hold the detail.
 
 - The workflow improvements before the suite resumes (`RESUME/optimize`): the mutation
-  driver's slices (`driver/d2`, the VPS lane), and the test-suite census (`LEAN/census`).
+  driver's slices (`driver/d2`, the VPS lane: d2b merged, d2a's trial pending, d2c next), and
+  the test-suite census (`LEAN/census`, its egui A/B running).
 - The checkpoint: `19fda006` passed it and is pushed; its Linux gates are owed.
 - The rolling mutation job: on the VPS, crate by crate, held after its current crate so the
   driver's VPS lane runs its trial job (`driver/d2a`).
@@ -653,8 +654,10 @@ and no phase closes with one outstanding.
     2026-11-27, three tries, one after `wsl --shutdown`, with 12 GB of memory free against
     the VM's 8 GB): find why before any WSL gates run; script tests run on the VPS meanwhile.
     WSL 3.0.5, kernel 6.18.58; `vmcompute` and `WslService` running, `LxssManager` stopped;
-    the Hyper-V compute log needs an administrator to read. To try, one at a time: after the
-    PC's next restart, then with `.wslconfig`'s `memory=` lowered;
+    the Hyper-V compute log needs an administrator to read. `memory=4GB` failed the same way
+    (2026-11-27, with 10.6 GB free; set back to 8 GB), and no other VM was running (VMware
+    Workstation's services idle, installed long before). Left to try: the PC's next restart
+    (the last was 2026-11-25; WSL started after it until 2026-11-27);
 - [ ] **RESUME** Before work on the suite resumes (the maintainer, 2026-11-26): the move to the
   new system drive, and the workflow improvements queued since 2026-11-26.
   - [ ] **migration** Windows moved to the 905P: waits on the maintainer's two lists, and is
@@ -981,17 +984,20 @@ and no phase closes with one outstanding.
               `just driver deploy` installs the lane as the VPS's `studio-driver` service.
               There each shard runs in a memory-capped `studio-shard` unit, and the lane waits
               while `studio-mutants` or `studio-gates` runs, below the disk floor, or under
-              `hold-vps`; `remote_refusal` refuses while a shard runs. This PC's lane skips
-              sent jobs until d2b. Merged `2c86c0d0` and deployed (2026-11-27). The trial:
+              `hold-vps`; `remote_refusal` refuses while a shard runs. Merged `2c86c0d0` and
+              deployed (2026-11-27); d2b's merge is deployed once this trial closes, so the
+              trial runs on the code it started with. The trial:
               `color_tools` queued and sent (`20261127T021741-color_tools`), the rolling job
               held (`.tmp/rolling.hold`) so the lane gets the VPS when the rolling job's
               crate ends. Then: both shards' `.done` and `shard-<k>/log` read on the VPS
               (`~/studio-driver/`), the hold removed, this item closed;
-            - [~] **d2b** [after d2a] this PC's side (brief `.tmp/lead/driver/brief_d2b.md`,
-              Opus in `4cc-studio-temp/sk_driver2b`): it claims a sent job's shards on the
-              VPS, and between its own shards puts back the ones it lost, fetches the VPS's
-              finished ones (all but caught mutants' logs), and rechecks their Windows-only
-              survivors in `finish`; the VPS's copy goes once the job is finished;
+            - [x] **d2b** 2026-11-27, merge `382014e8`: this PC's side. It claims a sent
+              job's shards on the VPS, and between its own shards puts back the ones it lost
+              and fetches the VPS's finished ones (all but caught mutants' logs). Its finish
+              rechecks their Windows-only survivors and removes the VPS's copy. Its tests
+              pass on Windows and Linux (the VPS). Not done: a VPS copy whose removal failed
+              at the finish stays there (no shard results, no `.todo`, so the VPS lane
+              ignores it);
             - [ ] **d2c** [after d2b] the coverage map once per job before the VPS's first
               shard of it, and its shards' tests selected from it;
           - [ ] **d3** [after d2] the rolling job's shards when nothing is queued, on both
@@ -4545,9 +4551,29 @@ points there.
     cipher rebuilt in 11 s either way; so `Cargo.toml` now optimizes `pes_savefile` in test
     builds (DECISIONS 2026-11-27). A `cargo --config` placed before `nextest` never reaches
     nextest's own build: an A/B sets its override in a throwaway worktree's
-    `.cargo/config.toml` and shows its side rebuilt (`.tmp/lean/probe_ab2.sh`). Left: the
-    first frame's ~200 ms that egui's crates optimized do not remove (egui's at opt-level 3
-    took it from ~248), and the tests each mutant selects;
+    `.cargo/config.toml` and shows its side rebuilt (`.tmp/lean/probe_ab2.sh`). The first
+    frame: egui's crates and its font parsers at opt-level 3 took it from ~248 ms to ~200,
+    and the later frames from ~15 to ~4.5; adding epaint's rasterizer (`vello_cpu` and its
+    crates) and shaper (`harfrust`) took the first to ~158 (`probe_ab3.sh`). An empty first
+    frame (one label) costs ~1 ms (`probe_c.sh`), so what is left is the view's own first
+    draw, each glyph rasterized the first time it shows included: code that is mutated, so
+    it stays unoptimized. Whether those egui crates go to opt-level 3 is decided by a
+    whole-suite A/B with its build cost (`.tmp/lean/suite_ab2.sh`, save_editor and
+    team_compiler).
+    The tests each mutant selects (`.tmp/lean/selection_census.py`, over the VPS run's
+    `save_editor` coverage map of 2026-11-26, each test weighed by its time in the suite
+    with `pes_savefile` optimized): of 4,465 mutants, 74 have no covering test; the median
+    mutant selects 33 tests (43 s summed), but a tenth select 859 or more of the 1,192
+    (812 s and up): the view's shared draw code is covered by nearly every view test.
+    Summed over the run that is 916,000 test-seconds, an upper bound: a caught mutant may
+    stop at its first failing test (whether cargo-mutants keeps nextest's fail-fast is not
+    checked). The 25 tests weighing most (times selected by own time) are a quarter of it:
+    most run 5-24 s and are selected by about 1,000-1,500 mutants (the multi-team AATF
+    tests, the overlap checks of its dialog and the menus' dialogs, the pictures run tests).
+    By module: `pictures`, `savefile::multi`, `overlap`,
+    `live_aatf`, `clipboard`, `changes_popup`, `tactics`. So `patterns` starts from those
+    tests: each slow one made cheaper, or kept out of the selection of code it does not
+    check, saves more than a fixed cost shaved off every test;
   - [ ] **patterns** [after census] the cheaper shapes in CONTRIBUTING "Testing and
     verification": a fixture loaded once per test binary, each instance's wiring checked
     in one table-driven scene, a shared widget's behavior tested once in its own crate.
