@@ -4563,11 +4563,16 @@ points there.
       run's one-second pause, the Multi-team AATF dialog's rest (`multi_checked`) and the
       wheel helpers' drains; the player list is wheeled to its end in 13 frames instead of
       342. `frames_until`'s 20 ms sleep stays: once the rest is out of the polling, it adds
-      at most one sleep to a wait. Tier 3: one SWE-2 round over p1 and p2 together, once p2
-      lands;
-    - [~] **p2** (SWE-2) four tests narrowed, every assertion kept: the id-order test checks
-      701-703 and the overflowing-list test thirty teams, not all ~220; the overlap test's
-      Multi-team AATF screens use thirty teams, its menu dialogs one save per version;
+      at most one sleep to a wait;
+    - [x] **p2** 2026-11-27, merge `7204f255` (SWE-2), with the overlap test's rest wait
+      `efd28d32`: four tests narrowed, every assertion kept. The id-order test checks
+      701-703 and the 360-point list test thirty teams, not all ~220; the overlap test's
+      Multi-team AATF screens use thirty teams, its menu dialogs one save per version, each
+      dialog closed before the next opens. One team's rows already overflow the list, so
+      thirty is a margin, not a bound;
+    - [~] **S1lean** one SWE-2 round over p1 and p2 (Tier 3), from the worktree
+      `review_lean` at `efd28d32`; the lead's suite timing before and after both
+      (`.tmp/lean/suite_ab3.sh`) runs beside it;
   - [ ] **pilot** [after patterns] one mid-size crate, whose whole mutation run takes about
     an hour, run before and after the lighter tests: a large crate's runs take too long to
     compare. A few mutants that newly survive are accepted when the run time falls clearly,
